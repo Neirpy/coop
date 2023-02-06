@@ -1,7 +1,8 @@
 <script setup>
-import {inject, onMounted, reactive} from "vue";
+import {inject, onMounted, reactive, watch} from "vue";
 import {useMembresStore} from "@/stores/membres";
 import {useRoute} from "vue-router";
+import {useSessionStore} from "@/stores/session";
 
 const bus = inject('bus');
 const route = useRoute();
@@ -16,26 +17,43 @@ data.membre = membreStore.getMembreById(route.params.id);
 
 function loadMessages() {
   let recupMessage = [];
-  api.get(`channels?token=${session.connectUser.token}`).then(response => {
-    for (let i = 0; i < response.length; i++) {
-      api.get(`channels/${response[i].id}/posts?token=${session.connectUser.token}`).then(messages => {
-        for (let j = 0; j < messages.length; j++) {
-          if (messages[j].id===session.connectUser.id) {
-            recupMessage.push(messages[j]);
+  api.get(`channels?token=${session.connectUser.token}`).then(responses => {
+
+    let total = responses.length;
+    for (let response of responses) {
+      api.get(`channels/${response.id}/posts?token=${session.connectUser.token}`).then(messages => {
+        // console.log('compteur messages', messages.length)
+        for (let message of messages) {
+          if (message.member_id === route.params.id) {
+            recupMessage.push(message);
           }
+        }
+        total--;
+        if(total===0) {
+          data.messages=recupMessage.sort((a, b) => {
+            return new Date(b.modified_at) - new Date(a.modified_at);
+          });
         }
       });
     }
-    console.log(recupMessage.sort((a, b) => a.created_at - b.created_at));
+
+
   });
 }
-loadMessages();
 
+watch(route, (to) => {
+  data.membre = membreStore.getMembreById(route.params.id);
+  loadMessages();
+});
+
+onMounted(() => {
+  loadMessages();
+})
 
 </script>
 
 <template>
-    <div class="columns">
+<div class="columns" v-if="data.membre">
     <div class="card column is-one-quarter">
       <div class="card-image">
         <figure class="image is-4by3">
@@ -62,13 +80,22 @@ loadMessages();
     <div class="card column">
       <div class="card-content">
         <div class="content">
-          Lorem ipsum dolor sit amet, consectetur adipiscing elit.
-          Phasellus nec iaculis mauris. <a>@bulmaio</a>.
-          <a href="#">#css</a> <a href="#">#responsive</a>
-          <br>
-          <time datetime="2016-1-1">11:09 PM - 1 Jan 2016</time>
-        </div>
+          <template v-for="message in data.messages.slice(0,10)">
+            <div class="box">
+              <article class="media">
+                <div class="media-content">
+                  <div class="content">
+                    <p>
+                      <RouterLink :to="'/conversation/'+ message.channel_id">{{message.message}}</RouterLink>
+                    </p>
+                    <small><a>Like</a> · <a>Reply</a> · {{message.modified_at}}</small>
+                  </div>
+                </div>
+              </article>
+            </div>
+          </template>
       </div>
     </div>
   </div>
+</div>
 </template>

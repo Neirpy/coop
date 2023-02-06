@@ -19,7 +19,7 @@ let data = reactive({
   messages : []
 })
 async function chargerMessages() {
-  if (route.params.id !== undefined){
+  if (route.params.id !== undefined && route.name === 'conversation'){
     const response = await api.get(`channels/${route.params.id}/posts?token=${session.connectUser.token}`);
     data.messages = response.reverse();
     refresh = setTimeout(() => bus.emit('recharger-messages'), 10);

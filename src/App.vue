@@ -23,6 +23,7 @@ provide('session', session);
 
 const membres = useMembresStore();
 //provide('membres', membres);
+console.log('membres', session.connectUser.member.fullname);
 
 const route = useRoute();
 

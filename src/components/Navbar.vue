@@ -1,15 +1,40 @@
 <script setup>
 import {useSessionStore} from "@/stores/session";
+import {computed, onMounted, reactive, ref, watch} from "vue";
+import {useRoute} from "vue-router";
+
 
 const session = useSessionStore();
 const membre = session.connectUser.member;
+console.log('membre', membre);
+const route = useRoute();
+let data = reactive({
+  navbar: [],
+  isLogin: false,
+});
+
+
+
+function dataNavbar () {
+  return membre.fullname !== undefined;
+}
+
+onMounted(()=>{
+  data.isLogin = dataNavbar();
+})
+
+//actualiser la navbar en fonction de l'utilisateur connecté
+watch(dataNavbar, (value) => {
+  data.isLogin = value;
+});
+
 </script>
 <template>
 <nav>
   <div class="navbar is-primary" role="navigation" aria-label="main navigation">
     <div class="navbar-brand">
       <RouterLink class="navbar-item" to="/">
-        <img src="https://bulma.io/images/bulma-logo.png" width="112" height="28">
+        <img src="../assets/logo.svg" width="112" height="28" alt="logo retour accueil">
       </RouterLink>
 
       <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" data-target="navbarBasicExample">
@@ -30,22 +55,30 @@ const membre = session.connectUser.member;
       <div class="navbar-end">
         <div class="navbar-item">
           <div class="buttons">
-            <div v-if="session.isValid()">
+<!--            <template v-for="item in data.navbar">-->
+<!--              <div>-->
+<!--                <RouterLink :class="'button '+item.class" :to="item.link">-->
+<!--                  <strong>{{item.name}}</strong>-->
+<!--                </RouterLink>-->
+<!--              </div>-->
+<!--            </template>-->
+
+            <template v-if="data.isLogin">
               <RouterLink class="button is-primary" to="/logout">
                 <strong>Se déconnecter</strong>
               </RouterLink>
               <RouterLink class="button is-secondary" :to="'/member/' + membre.id">
                 {{membre.fullname}}
               </RouterLink>
-            </div>
-            <div v-else>
+            </template>
+            <template v-else>
               <RouterLink class="button is-primary" to="/login">
                 <strong>Se connecter</strong>
               </RouterLink>
               <RouterLink class="button is-light" to="/add-user">
                 S'inscrire
               </RouterLink>
-            </div>
+            </template>
           </div>
         </div>
       </div>

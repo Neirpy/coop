@@ -23,19 +23,30 @@ export const useSessionStore = defineStore('session', () => {
       return false;
     }else {
       const mid = connectUser.member.id;
-      const response =await api.get(`members/${mid}/signedin?token=${token}`);
-      const data = await response;
-
-      if (!data.token){
-        await router.push('/login');
-        return false;
+      if (mid !== undefined) {
+        const response = await api.get(`members/${mid}/signedin?token=${token}`);
+        const data = await response;
+        if (!data.token){
+          await router.push('/login');
+          return false;
+        }
       }
+
+
 
       return true;
     }
   }
 
-  return { connectUser, setSession, isValid }
+  async function logout() {
+    const token = connectUser.token;
+    connectUser.member = {};
+    const response =await api.delete(`members/signout?token=${token}`);
+    await isValid();
+    await router.push('/login');
+  }
+
+  return { connectUser, setSession, isValid, logout }
 }, {
   persist: true,
 })
